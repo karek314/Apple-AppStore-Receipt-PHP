@@ -6,4 +6,4 @@ Add apple.php to your project.
 ```php
 require_once('apple.php');
 ```
-Then call <b>getReceiptData()</b> with b64 encoded license received from iOS app, 1 for sandbox and 0 for production.
+Then call <b>getReceiptData()</b> with b64 encoded license received from iOS/MacOS app, 1 for sandbox and 0 for production.
