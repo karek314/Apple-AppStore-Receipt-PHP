@@ -13,45 +13,53 @@ function getReceiptData($receipt,$sandbox) {
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($ch, CURLOPT_POST, true);
   curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-  curl_setopt($ch, CURLOPT_TIMEOUT,3);
+  curl_setopt($ch, CURLOPT_TIMEOUT,6);
   $response = curl_exec($ch);
-
   $retry = 0;
-  while(curl_errno($ch) == 28 && $retry < 8){
+  while(curl_errno($ch) == 28 && $retry < 4){
     $response = curl_exec($ch);
     $retry++;
   }
   curl_close($ch);
-  $data = json_decode($response);
+  $data = json_decode($response, true);
   $r_data = array();
   if ($data) {
-    if (isset($data->status)) {
-      $r_data['status'] = $data->status;
+    if (isset($data['status'])) {
+      $r_data['status'] = $data['status'];
     } else {
       return false;
     }
-    if (isset($data->receipt)) {
-      if ($data->receipt->quantity) {
-        $r_data['quantity'] = $data->receipt->quantity;
+    if (isset($data['receipt'])) {
+      $receipt = $data['receipt'];
+      if ($receipt['bid']) {
+        $r_data['bundle_id'] = $receipt['bid'];
       }
-      if ($data->receipt->product_id) {
-        $r_data['product_id'] = $data->receipt->product_id;
+      if ($receipt['product_id']) {
+          $r_data['product_id'] = $receipt['product_id'];
       }
-      if ($data->receipt->transaction_id) {
-        $r_data['transaction_id'] = $data->receipt->transaction_id;
+      if ($receipt['transaction_id']) {
+        $r_data['transaction_id'] = $receipt['original_transaction_id'];
       }
-      if ($data->receipt->original_transaction_id) {
-        $r_data['original_transaction_id'] = $data->receipt->original_transaction_id;
+      if ($receipt['purchase_date_ms']) {
+        $r_data['purchase_date'] = $receipt['purchase_date_ms']/1000;
       }
-      if ($data->receipt->purchase_date) {
-        $r_data['purchase_date'] = $data->receipt->purchase_date;
+      if ($receipt['bundle_id']) {
+        $r_data['bundle_id'] = $receipt['bundle_id'];
       }
-      if ($data->receipt->bid) {
-        $r_data['bid'] = $data->receipt->bid;
+      if (isset($receipt['in_app'][0])) {
+        $in_app = $receipt['in_app'][0];
+        if ($in_app['product_id']) {
+          $r_data['product_id'] = $in_app['product_id'];
+        }
+        if ($in_app['transaction_id']) {
+          $r_data['transaction_id'] = $in_app['transaction_id'];
+        }
+        if ($in_app['original_purchase_date_ms']) {
+          $r_data['purchase_date'] = $in_app['original_purchase_date_ms']/1000;
+        }
       }
-      if ($data->receipt->bvrs) {
-        $r_data['bvrs'] = $data->receipt->bvrs;
-      }
+    } else {
+      return false;
     }
     return $r_data;
   } else {
